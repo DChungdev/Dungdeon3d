@@ -1,0 +1,124 @@
+{
+  "items": [
+    {
+      "id": "sword_wooden",
+      "name": "Wooden Sword",
+      "description": "A basic training sword.",
+      "itemType": "WEAPON",
+      "equipSlot": "WEAPON",
+      "stackable": false,
+      "maxStack": 1,
+      "baseStats": { "atk": 5 },
+      "levelRequired": 1,
+      "vendorPrice": 50
+    },
+    {
+      "id": "sword_iron",
+      "name": "Iron Sword",
+      "description": "Reliable iron blade.",
+      "itemType": "WEAPON",
+      "equipSlot": "WEAPON",
+      "stackable": false,
+      "maxStack": 1,
+      "baseStats": { "atk": 15 },
+      "levelRequired": 5,
+      "vendorPrice": 200
+    },
+    {
+      "id": "sword_steel",
+      "name": "Steel Sword",
+      "description": "Well-forged steel sword.",
+      "itemType": "WEAPON",
+      "equipSlot": "WEAPON",
+      "stackable": false,
+      "maxStack": 1,
+      "baseStats": { "atk": 28 },
+      "levelRequired": 10,
+      "vendorPrice": 500
+    },
+    {
+      "id": "staff_apprentice",
+      "name": "Apprentice Staff",
+      "description": "Basic mage staff.",
+      "itemType": "WEAPON",
+      "equipSlot": "WEAPON",
+      "stackable": false,
+      "maxStack": 1,
+      "baseStats": { "atk": 8, "maxMp": 20 },
+      "levelRequired": 1,
+      "vendorPrice": 50
+    },
+    {
+      "id": "staff_arcane",
+      "name": "Arcane Staff",
+      "description": "Channels arcane energy.",
+      "itemType": "WEAPON",
+      "equipSlot": "WEAPON",
+      "stackable": false,
+      "maxStack": 1,
+      "baseStats": { "atk": 22, "maxMp": 50 },
+      "levelRequired": 10,
+      "vendorPrice": 500
+    },
+    {
+      "id": "helm_leather",
+      "name": "Leather Helm",
+      "description": "Light head protection.",
+      "itemType": "ARMOR",
+      "equipSlot": "HELM",
+      "stackable": false,
+      "maxStack": 1,
+      "baseStats": { "def": 3, "maxHp": 20 },
+      "levelRequired": 1,
+      "vendorPrice": 40
+    },
+    {
+      "id": "chest_leather",
+      "name": "Leather Vest",
+      "description": "Basic chest armor.",
+      "itemType": "ARMOR",
+      "equipSlot": "CHEST",
+      "stackable": false,
+      "maxStack": 1,
+      "baseStats": { "def": 5, "maxHp": 30 },
+      "levelRequired": 1,
+      "vendorPrice": 60
+    },
+    {
+      "id": "mat_goblin_ear",
+      "name": "Goblin Ear",
+      "description": "Trophy from a goblin.",
+      "itemType": "MATERIAL",
+      "equipSlot": null,
+      "stackable": true,
+      "maxStack": 999,
+      "baseStats": {},
+      "levelRequired": 1,
+      "vendorPrice": 10
+    },
+    {
+      "id": "mat_bone",
+      "name": "Bone Fragment",
+      "description": "Undead remains.",
+      "itemType": "MATERIAL",
+      "equipSlot": null,
+      "stackable": true,
+      "maxStack": 999,
+      "baseStats": {},
+      "levelRequired": 1,
+      "vendorPrice": 15
+    },
+    {
+      "id": "potion_hp_small",
+      "name": "Small HP Potion",
+      "description": "Restores 200 HP.",
+      "itemType": "CONSUMABLE",
+      "equipSlot": null,
+      "stackable": true,
+      "maxStack": 20,
+      "baseStats": { "healHp": 200 },
+      "levelRequired": 1,
+      "vendorPrice": 25
+    }
+  ]
+}

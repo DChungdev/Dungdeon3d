@@ -1,0 +1,26 @@
+# Test profile: no PostgreSQL / Redis. Repositories are replaced with mocks in tests.
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration
+      - org.springframework.boot.data.redis.autoconfigure.DataRedisRepositoriesAutoConfiguration
+      - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
+      - org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration
+      - org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration
+      - org.springframework.boot.data.jpa.autoconfigure.DataJpaRepositoriesAutoConfiguration
+
+ddo:
+  jwt:
+    secret: test-secret-min-32-characters-long!!
+    access-token-ttl-sec: 900
+    refresh-token-ttl-sec: 604800
+  cors:
+    allowed-origins: "*"
+  cache:
+    type: memory
+  game:
+    hub-max-players-per-shard: 30
+    instance-max-players: 4
+    instance-idle-timeout-sec: 300
+    combat-tick-hz: 10
+    reconnect-grace-sec: 60

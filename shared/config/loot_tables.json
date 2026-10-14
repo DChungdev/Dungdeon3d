@@ -1,0 +1,54 @@
+{
+  "lootTables": [
+    {
+      "id": "loot_goblin_normal",
+      "name": "Goblin Normal Drops",
+      "entries": [
+        { "itemDefId": "mat_goblin_ear", "weight": 400, "minQty": 1, "maxQty": 2, "minRarity": "COMMON" },
+        { "itemDefId": "sword_wooden", "weight": 50, "minQty": 1, "maxQty": 1, "minRarity": "COMMON" },
+        { "itemDefId": "helm_leather", "weight": 50, "minQty": 1, "maxQty": 1, "minRarity": "COMMON" },
+        { "itemDefId": "sword_iron", "weight": 20, "minQty": 1, "maxQty": 1, "minRarity": "RARE" }
+      ]
+    },
+    {
+      "id": "loot_goblin_elite",
+      "name": "Goblin Elite Drops",
+      "entries": [
+        { "itemDefId": "mat_goblin_ear", "weight": 200, "minQty": 2, "maxQty": 3, "minRarity": "COMMON" },
+        { "itemDefId": "sword_iron", "weight": 100, "minQty": 1, "maxQty": 1, "minRarity": "RARE" },
+        { "itemDefId": "chest_leather", "weight": 80, "minQty": 1, "maxQty": 1, "minRarity": "RARE" }
+      ]
+    },
+    {
+      "id": "loot_boss_goblin",
+      "name": "Goblin King Drops",
+      "entries": [
+        { "itemDefId": "mat_goblin_ear", "weight": 100, "minQty": 3, "maxQty": 5, "minRarity": "COMMON" },
+        { "itemDefId": "sword_steel", "weight": 150, "minQty": 1, "maxQty": 1, "minRarity": "RARE" },
+        { "itemDefId": "sword_steel", "weight": 30, "minQty": 1, "maxQty": 1, "minRarity": "EPIC" }
+      ]
+    },
+    {
+      "id": "loot_undead_normal",
+      "name": "Undead Normal Drops",
+      "entries": [
+        { "itemDefId": "mat_bone", "weight": 400, "minQty": 1, "maxQty": 2, "minRarity": "COMMON" }
+      ]
+    },
+    {
+      "id": "loot_boss_lich",
+      "name": "Lich Drops",
+      "entries": [
+        { "itemDefId": "mat_bone", "weight": 100, "minQty": 3, "maxQty": 5, "minRarity": "COMMON" },
+        { "itemDefId": "staff_arcane", "weight": 25, "minQty": 1, "maxQty": 1, "minRarity": "EPIC" }
+      ]
+    },
+    {
+      "id": "loot_boss_dragon",
+      "name": "Dragon Drops",
+      "entries": [
+        { "itemDefId": "mat_bone", "weight": 200, "minQty": 1, "maxQty": 3, "minRarity": "RARE" }
+      ]
+    }
+  ]
+}

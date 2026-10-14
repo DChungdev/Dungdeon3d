@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: dungeon-delvers-server
+  profiles:
+    active: local-native
+
+management:
+  endpoints:
+    web:
+      base-path: /actuator

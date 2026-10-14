@@ -1,0 +1,64 @@
+{
+  "quests": [
+    {
+      "id": "quest_tutorial_move",
+      "name": "First Steps",
+      "description": "Learn to move around Skyhaven.",
+      "questType": "TALK",
+      "objective": { "step": 1 },
+      "reward": { "xp": 50 },
+      "isDaily": false,
+      "isTutorial": true
+    },
+    {
+      "id": "quest_tutorial_combat",
+      "name": "First Blood",
+      "description": "Defeat goblins in the cave.",
+      "questType": "KILL",
+      "objective": { "mobId": "mob_goblin_grunt", "count": 3 },
+      "reward": { "xp": 100, "gold": 50 },
+      "isDaily": false,
+      "isTutorial": true
+    },
+    {
+      "id": "quest_tutorial_dungeon",
+      "name": "Cave Delver",
+      "description": "Clear Goblin Cave.",
+      "questType": "CLEAR_DUNGEON",
+      "objective": { "dungeonId": "dungeon_goblin_cave" },
+      "reward": { "xp": 200, "itemDefId": "sword_iron" },
+      "isDaily": false,
+      "isTutorial": true
+    },
+    {
+      "id": "quest_daily_clear",
+      "name": "Daily Delve",
+      "description": "Clear any dungeon.",
+      "questType": "CLEAR_DUNGEON",
+      "objective": { "count": 1 },
+      "reward": { "gold": 50, "xp": 100 },
+      "isDaily": true,
+      "isTutorial": false
+    },
+    {
+      "id": "quest_daily_kill",
+      "name": "Pest Control",
+      "description": "Slay 30 monsters.",
+      "questType": "KILL",
+      "objective": { "count": 30 },
+      "reward": { "gold": 50, "xp": 80 },
+      "isDaily": true,
+      "isTutorial": false
+    },
+    {
+      "id": "quest_daily_craft",
+      "name": "Artisan Work",
+      "description": "Craft 1 item.",
+      "questType": "CRAFT",
+      "objective": { "count": 1 },
+      "reward": { "gold": 50, "xp": 60 },
+      "isDaily": true,
+      "isTutorial": false
+    }
+  ]
+}

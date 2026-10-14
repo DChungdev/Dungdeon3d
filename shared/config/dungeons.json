@@ -1,0 +1,56 @@
+{
+  "dungeons": [
+    {
+      "id": "dungeon_goblin_cave",
+      "name": "Goblin Cave",
+      "description": "A cave infested with goblins.",
+      "minLevel": 1,
+      "maxPartySize": 4,
+      "roomCount": 3,
+      "parTimeMs": 600000,
+      "layoutType": "FIXED",
+      "layout": {
+        "rooms": ["goblin_room_1", "goblin_room_2", "goblin_boss"],
+        "mobs": {
+          "goblin_room_1": ["mob_goblin_grunt", "mob_goblin_grunt", "mob_goblin_archer"],
+          "goblin_room_2": ["mob_goblin_grunt", "mob_goblin_shaman"],
+          "goblin_boss": ["mob_boss_goblin_king"]
+        }
+      }
+    },
+    {
+      "id": "dungeon_undead_crypt",
+      "name": "Undead Crypt",
+      "description": "Crypt of the restless dead.",
+      "minLevel": 10,
+      "maxPartySize": 4,
+      "roomCount": 4,
+      "parTimeMs": 900000,
+      "layoutType": "FIXED",
+      "layout": {
+        "rooms": ["crypt_room_1", "crypt_room_2", "crypt_room_3", "crypt_boss"],
+        "mobs": {
+          "crypt_room_1": ["mob_skeleton", "mob_skeleton"],
+          "crypt_room_2": ["mob_skeleton", "mob_zombie"],
+          "crypt_room_3": ["mob_zombie", "mob_zombie", "mob_skeleton"],
+          "crypt_boss": ["mob_boss_lich"]
+        }
+      }
+    },
+    {
+      "id": "dungeon_procedural",
+      "name": "Rift Dungeon",
+      "description": "A shifting dimensional rift.",
+      "minLevel": 15,
+      "maxPartySize": 4,
+      "roomCount": 6,
+      "parTimeMs": 900000,
+      "layoutType": "PROCEDURAL",
+      "layout": {
+        "roomTemplates": ["proc_room_empty", "proc_room_mob", "proc_room_elite", "proc_room_boss"],
+        "minRooms": 4,
+        "maxRooms": 7
+      }
+    }
+  ]
+}

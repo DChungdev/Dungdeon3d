@@ -1,0 +1,66 @@
+# Profile: local-native
+# Dùng khi KHÔNG có Docker và KHÔNG có Redis.
+# PostgreSQL: cài native Windows hoặc Neon cloud.
+# Session/cache: in-memory (đủ Phase 0 prototype).
+
+spring:
+  application:
+    name: dungeon-delvers-server
+
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration
+      - org.springframework.boot.data.redis.autoconfigure.DataRedisRepositoriesAutoConfiguration
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/dungeon_delvers
+    username: postgres
+    password: 123456
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+server:
+  port: 8080
+
+ddo:
+  jwt:
+    secret: dev-secret-change-in-production-min-32-chars!!
+    access-token-ttl-sec: 900
+    refresh-token-ttl-sec: 604800
+  cache:
+  # memory = in-process ConcurrentHashMap (Phase 0)
+  # redis  = cần profile "local" + Redis/Memurai/Upstash
+    type: memory
+  cors:
+    allowed-origins: "*"
+  game:
+    hub-max-players-per-shard: 30
+    instance-max-players: 4
+    instance-idle-timeout-sec: 300
+    combat-tick-hz: 10
+    reconnect-grace-sec: 60
+
+logging:
+  level:
+    root: INFO
+    com.dungeondelvers: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

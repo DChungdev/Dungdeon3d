@@ -1,0 +1,12 @@
+{
+  "version": "1.0.0",
+  "hash": "mvp-seed-v1",
+  "files": [
+    "items.json",
+    "skills.json",
+    "mobs.json",
+    "dungeons.json",
+    "loot_tables.json",
+    "quests.json"
+  ]
+}

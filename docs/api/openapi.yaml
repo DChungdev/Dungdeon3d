@@ -1,0 +1,1344 @@
+openapi: 3.0.3
+info:
+  title: Dungeon Delvers Online API
+  version: 1.0.0
+  description: |
+    REST API for Dungeon Delvers Online.
+    Realtime gameplay uses WebSocket — see `docs/network-protocol.md`.
+
+    **Phase markers:**
+    - `[P0]` Phase 0 Prototype
+    - `[P1]` Phase 1 Vertical Slice
+    - `[P2]` Phase 2 Alpha
+    - `[P3]` Phase 3 Beta
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+  - url: https://staging.api.dungeondelvers.com
+    description: Staging
+  - url: https://api.dungeondelvers.com
+    description: Production
+
+tags:
+  - name: Health
+  - name: Auth
+  - name: Characters
+  - name: Inventory
+  - name: Quests
+  - name: Social
+  - name: Leaderboard
+  - name: Shop
+  - name: IAP
+  - name: Config
+  - name: Admin
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /api/v1/auth/register:
+    post:
+      tags: [Auth]
+      summary: "[P0] Register account"
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseAuth'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Email already exists
+
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: "[P0] Login"
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseAuth'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/auth/guest:
+    post:
+      tags: [Auth]
+      summary: "[P1] Guest login"
+      operationId: guestLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [deviceId]
+              properties:
+                deviceId:
+                  type: string
+                  maxLength: 128
+      responses:
+        '200':
+          description: Guest account created or logged in
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseAuth'
+
+  /api/v1/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: "[P0] Refresh access token"
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: New tokens
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseAuth'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/auth/logout:
+    post:
+      tags: [Auth]
+      summary: "[P1] Logout"
+      operationId: logout
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseEmpty'
+
+  /api/v1/characters:
+    get:
+      tags: [Characters]
+      summary: "[P0] List characters"
+      operationId: listCharacters
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Character list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseCharacterList'
+    post:
+      tags: [Characters]
+      summary: "[P0] Create character"
+      operationId: createCharacter
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCharacterRequest'
+      responses:
+        '201':
+          description: Character created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseCharacter'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Name taken
+
+  /api/v1/characters/{characterId}:
+    get:
+      tags: [Characters]
+      summary: "[P1] Get character detail"
+      operationId: getCharacter
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/characterId'
+      responses:
+        '200':
+          description: Character detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseCharacter'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/characters/{characterId}/inventory:
+    get:
+      tags: [Inventory]
+      summary: "[P0] Get inventory"
+      operationId: getInventory
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/characterId'
+      responses:
+        '200':
+          description: Inventory items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseInventory'
+
+  /api/v1/characters/{characterId}/equip:
+    post:
+      tags: [Inventory]
+      summary: "[P1] Equip item"
+      operationId: equipItem
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/characterId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [inventoryItemId, slotType]
+              properties:
+                inventoryItemId:
+                  type: string
+                  format: uuid
+                slotType:
+                  $ref: '#/components/schemas/EquipSlotType'
+      responses:
+        '200':
+          description: Equipped
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseCharacter'
+
+  /api/v1/characters/{characterId}/unequip:
+    post:
+      tags: [Inventory]
+      summary: "[P1] Unequip slot"
+      operationId: unequipItem
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/characterId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [slotType]
+              properties:
+                slotType:
+                  $ref: '#/components/schemas/EquipSlotType'
+      responses:
+        '200':
+          description: Unequipped
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseCharacter'
+
+  /api/v1/characters/{characterId}/craft:
+    post:
+      tags: [Inventory]
+      summary: "[P2] Craft item"
+      operationId: craftItem
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/characterId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [recipeId]
+              properties:
+                recipeId:
+                  type: string
+      responses:
+        '200':
+          description: Crafted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseInventory'
+
+  /api/v1/characters/{characterId}/enhance:
+    post:
+      tags: [Inventory]
+      summary: "[P2] Enhance equipment"
+      operationId: enhanceItem
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/characterId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [inventoryItemId]
+              properties:
+                inventoryItemId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Enhanced
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseInventory'
+
+  /api/v1/quests/daily:
+    get:
+      tags: [Quests]
+      summary: "[P2] Get daily quests"
+      operationId: getDailyQuests
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: characterId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Daily quests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseQuestList'
+
+  /api/v1/quests/{questProgressId}/claim:
+    post:
+      tags: [Quests]
+      summary: "[P2] Claim quest reward"
+      operationId: claimQuest
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: questProgressId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Reward claimed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseQuestClaim'
+
+  /api/v1/friends:
+    get:
+      tags: [Social]
+      summary: "[P2] List friends"
+      operationId: listFriends
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: characterId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Friend list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseFriendList'
+
+  /api/v1/friends/add:
+    post:
+      tags: [Social]
+      summary: "[P2] Add friend"
+      operationId: addFriend
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [characterId, targetCharacterName]
+              properties:
+                characterId:
+                  type: string
+                  format: uuid
+                targetCharacterName:
+                  type: string
+      responses:
+        '200':
+          description: Friend added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseEmpty'
+
+  /api/v1/friends/remove:
+    post:
+      tags: [Social]
+      summary: "[P2] Remove friend"
+      operationId: removeFriend
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [characterId, friendCharacterId]
+              properties:
+                characterId:
+                  type: string
+                  format: uuid
+                friendCharacterId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Friend removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseEmpty'
+
+  /api/v1/guilds:
+    post:
+      tags: [Social]
+      summary: "[P2] Create guild"
+      operationId: createGuild
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGuildRequest'
+      responses:
+        '201':
+          description: Guild created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseGuild'
+
+  /api/v1/guilds/{guildId}/join:
+    post:
+      tags: [Social]
+      summary: "[P2] Join guild"
+      operationId: joinGuild
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: guildId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [characterId]
+              properties:
+                characterId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Joined
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseGuild'
+
+  /api/v1/leaderboard/{dungeonId}:
+    get:
+      tags: [Leaderboard]
+      summary: "[P2] Get weekly leaderboard"
+      operationId: getLeaderboard
+      parameters:
+        - name: dungeonId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: seasonId
+          in: query
+          schema:
+            type: string
+            default: current
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 100
+      responses:
+        '200':
+          description: Leaderboard entries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseLeaderboard'
+
+  /api/v1/shop/catalog:
+    get:
+      tags: [Shop]
+      summary: "[P3] Get gem shop catalog"
+      operationId: getShopCatalog
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Shop items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseShopCatalog'
+
+  /api/v1/shop/purchase:
+    post:
+      tags: [Shop]
+      summary: "[P3] Purchase with gems"
+      operationId: purchaseShopItem
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [characterId, shopItemId]
+              properties:
+                characterId:
+                  type: string
+                  format: uuid
+                shopItemId:
+                  type: string
+      responses:
+        '200':
+          description: Purchased
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseShopPurchase'
+
+  /api/v1/iap/verify:
+    post:
+      tags: [IAP]
+      summary: "[P3] Verify Google Play purchase"
+      operationId: verifyIap
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IapVerifyRequest'
+      responses:
+        '200':
+          description: Purchase verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseIapVerify'
+
+  /api/v1/battle-pass:
+    get:
+      tags: [Shop]
+      summary: "[P3] Get battle pass progress"
+      operationId: getBattlePass
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: characterId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Battle pass state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseBattlePass'
+
+  /api/v1/battle-pass/claim:
+    post:
+      tags: [Shop]
+      summary: "[P3] Claim battle pass tier"
+      operationId: claimBattlePassTier
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [characterId, tier, track]
+              properties:
+                characterId:
+                  type: string
+                  format: uuid
+                tier:
+                  type: integer
+                  minimum: 1
+                  maximum: 30
+                track:
+                  type: string
+                  enum: [FREE, PREMIUM]
+      responses:
+        '200':
+          description: Tier claimed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseBattlePassClaim'
+
+  /api/v1/config/game:
+    get:
+      tags: [Config]
+      summary: "[P0] Get game config manifest"
+      operationId: getGameConfig
+      parameters:
+        - name: clientVersion
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Config version and download URLs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseConfigManifest'
+
+  /api/v1/config/game/data:
+    get:
+      tags: [Config]
+      summary: "[P1] Download game config bundle"
+      operationId: getGameConfigData
+      parameters:
+        - name: version
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Full config JSON
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameConfigBundle'
+
+  /api/v1/admin/players/search:
+    get:
+      tags: [Admin]
+      summary: "[P2] Search player (admin)"
+      operationId: adminSearchPlayer
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseAdminPlayerSearch'
+
+  /api/v1/admin/players/{characterId}/ban:
+    post:
+      tags: [Admin]
+      summary: "[P2] Ban player"
+      operationId: adminBanPlayer
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/characterId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                durationHours:
+                  type: integer
+                  description: Omit for permanent
+      responses:
+        '200':
+          description: Banned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponseEmpty'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    characterId:
+      name: characterId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiResponseError'
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiResponseError'
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiResponseError'
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: UP
+        ccu:
+          type: integer
+        version:
+          type: string
+
+    ApiResponseBase:
+      type: object
+      properties:
+        success:
+          type: boolean
+        serverTime:
+          type: integer
+          format: int64
+          description: Unix epoch milliseconds
+        error:
+          $ref: '#/components/schemas/ErrorDetail'
+
+    ApiResponseEmpty:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponseBase'
+        - type: object
+          properties:
+            data:
+              nullable: true
+
+    ApiResponseError:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponseBase'
+      example:
+        success: false
+        serverTime: 1717939200123
+        error:
+          code: INVALID_INPUT
+          message: Email is required
+
+    ErrorDetail:
+      type: object
+      nullable: true
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+
+    RegisterRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+          maxLength: 64
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    AuthTokens:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresIn:
+          type: integer
+          description: Access token TTL seconds
+        accountId:
+          type: string
+          format: uuid
+
+    ApiResponseAuth:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponseBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/AuthTokens'
+
+    CreateCharacterRequest:
+      type: object
+      required: [name, classType]
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 16
+        classType:
+          $ref: '#/components/schemas/ClassType'
+
+    ClassType:
+      type: string
+      enum: [WARRIOR, MAGE]
+
+    EquipSlotType:
+      type: string
+      enum: [WEAPON, HELM, CHEST, GLOVES, BOOTS, ACCESSORY]
+
+    CharacterStats:
+      type: object
+      properties:
+        maxHp:
+          type: integer
+        maxMp:
+          type: integer
+        atk:
+          type: integer
+        def:
+          type: integer
+        critRate:
+          type: number
+          format: float
+        critDamage:
+          type: number
+          format: float
+        moveSpeed:
+          type: number
+          format: float
+
+    Character:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        classType:
+          $ref: '#/components/schemas/ClassType'
+        level:
+          type: integer
+        xp:
+          type: integer
+          format: int64
+        gold:
+          type: integer
+        premiumGems:
+          type: integer
+        stats:
+          $ref: '#/components/schemas/CharacterStats'
+        hubShardId:
+          type: string
+        equipment:
+          type: array
+          items:
+            $ref: '#/components/schemas/EquippedItem'
+
+    EquippedItem:
+      type: object
+      properties:
+        slotType:
+          $ref: '#/components/schemas/EquipSlotType'
+        inventoryItemId:
+          type: string
+          format: uuid
+        itemDefId:
+          type: string
+        rarity:
+          $ref: '#/components/schemas/Rarity'
+        enhanceLevel:
+          type: integer
+
+    ApiResponseCharacter:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponseBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Character'
+
+    ApiResponseCharacterList:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponseBase'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Character'
+
+    Rarity:
+      type: string
+      enum: [COMMON, RARE, EPIC]
+
+    InventoryItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        itemDefId:
+          type: string
+        quantity:
+          type: integer
+        rarity:
+          $ref: '#/components/schemas/Rarity'
+        enhanceLevel:
+          type: integer
+        bound:
+          type: boolean
+        slotIndex:
+          type: integer
+
+    ApiResponseInventory:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponseBase'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/InventoryItem'
+                capacity:
+                  type: integer
+
+    QuestProgress:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        questDefId:
+          type: string
+        title:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, COMPLETED, CLAIMED]
+        progress:
+          type: object
+          additionalProperties: true
+        reward:
+          type: object
+          properties:
+            gold:
+              type: integer
+            xp:
+              type: integer
+
+    ApiResponseQuestList:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponseBase'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/QuestProgress'
+
+    ApiResponseQuestClaim:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponseBase'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                goldAwarded:
+                  type: integer
+                xpAwarded:
+                  type: integer
+
+    Friend:
+      type: object
+      properties:
+        characterId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        level:
+          type: integer
+        online:
+          type: boolean
+        zone:
+          type: string
+          enum: [OFFLINE, HUB, DUNGEON]
+
+    ApiResponseFriendList:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponseBase'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Friend'
+
+    CreateGuildRequest:
+      type: object
+      required: [characterId, name, tag]
+      properties:
+        characterId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 30
+        tag:
+          type: string
+          minLength: 2
+          maxLength: 5
+
+    Guild:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        tag:
+          type: string
+        memberCount:
+          type: integer
+        maxMembers:
+          type: integer
+
+    ApiResponseGuild:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponseBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/Guild'
+
+    LeaderboardEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+        characterName:
+          type: string
+        clearTimeMs:
+          type: integer
+        partySize:
+          type: integer
+        achievedAt:
+          type: string
+          format: date-time
+
+    ApiResponseLeaderboard:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponseBase'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                seasonId:
+                  type: string
+                dungeonId:
+                  type: string
+                entries:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/LeaderboardEntry'
+
+    ShopItem:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [SKIN, WEAPON_SKIN, EMOTE]
+        name:
+          type: string
+        gemCost:
+          type: integer
+        previewUrl:
+          type: string
+
+    ApiResponseShopCatalog:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponseBase'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/ShopItem'
+
+    ApiResponseShopPurchase:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponseBase'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                gemsRemaining:
+                  type: integer
+                unlockedItemId:
+                  type: string
+
+    IapVerifyRequest:
+      type: object
+      required: [productId, purchaseToken, packageName]
+      properties:
+        productId:
+          type: string
+        purchaseToken:
+          type: string
+        packageName:
+          type: string
+
+    ApiResponseIapVerify:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponseBase'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                gemsGranted:
+                  type: integer
+                transactionId:
+                  type: string
+                  format: uuid
+
+    BattlePassState:
+      type: object
+      properties:
+        seasonId:
+          type: string
+        currentTier:
+          type: integer
+        currentXp:
+          type: integer
+        premiumUnlocked:
+          type: boolean
+        claimedTiers:
+          type: object
+          properties:
+            free:
+              type: array
+              items:
+                type: integer
+            premium:
+              type: array
+              items:
+                type: integer
+
+    ApiResponseBattlePass:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponseBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/BattlePassState'
+
+    ApiResponseBattlePassClaim:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponseBase'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                rewards:
+                  type: array
+                  items:
+                    type: object
+
+    ConfigManifest:
+      type: object
+      properties:
+        configVersion:
+          type: string
+        configHash:
+          type: string
+        downloadUrl:
+          type: string
+
+    ApiResponseConfigManifest:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponseBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/ConfigManifest'
+
+    GameConfigBundle:
+      type: object
+      properties:
+        version:
+          type: string
+        items:
+          type: array
+          items:
+            type: object
+        skills:
+          type: array
+          items:
+            type: object
+        mobs:
+          type: array
+          items:
+            type: object
+        dungeons:
+          type: array
+          items:
+            type: object
+
+    AdminPlayerSummary:
+      type: object
+      properties:
+        accountId:
+          type: string
+          format: uuid
+        characterId:
+          type: string
+          format: uuid
+        characterName:
+          type: string
+        status:
+          type: string
+        level:
+          type: integer
+        gold:
+          type: integer
+
+    ApiResponseAdminPlayerSearch:
+      allOf:
+        - $ref: '#/components/schemas/ApiResponseBase'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/AdminPlayerSummary'
