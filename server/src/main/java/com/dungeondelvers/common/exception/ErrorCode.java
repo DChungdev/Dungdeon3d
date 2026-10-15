@@ -8,5 +8,6 @@ public enum ErrorCode {
     EMAIL_EXISTS,
     NAME_TAKEN,
     ACCOUNT_BANNED,
+    RATE_LIMITED,
     INTERNAL_ERROR
 }

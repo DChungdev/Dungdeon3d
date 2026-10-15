@@ -3,6 +3,7 @@ package com.dungeondelvers.game.ws;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
+import com.dungeondelvers.MockPersistence;
 import com.dungeondelvers.auth.jwt.JwtService;
 import com.dungeondelvers.game.CharacterBaseStats;
 import com.dungeondelvers.persistence.entity.CharacterEntity;
@@ -24,6 +25,7 @@ import tools.jackson.databind.ObjectMapper;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
+@MockPersistence
 class InstanceIntegrationTest {
 
     private static final String JOIN_GOBLIN_CAVE = "{\"dungeonId\":\"dungeon_goblin_cave\",\"difficulty\":\"NORMAL\"}";
@@ -66,12 +68,13 @@ class InstanceIntegrationTest {
         JsonNode enterA = a.client.next("INSTANCE_ENTER");
         assertThat(enterA.get("localPlayerId").asString()).isEqualTo(a.characterId.toString());
         assertThat(enterA.get("roomTemplateIds")).hasSize(3);
-        assertThat(entityIds(enterA.get("entities"))).containsExactly(a.characterId.toString());
+        assertThat(entityIds(enterA.get("entities"), "PLAYER")).containsExactly(a.characterId.toString());
+        assertThat(entityIds(enterA.get("entities"), "MOB")).hasSize(3);
 
         b.client.send("JOIN_INSTANCE", JOIN_GOBLIN_CAVE);
         JsonNode enterB = b.client.next("INSTANCE_ENTER");
         assertThat(enterB.get("instanceId").asString()).isEqualTo(enterA.get("instanceId").asString());
-        assertThat(entityIds(enterB.get("entities")))
+        assertThat(entityIds(enterB.get("entities"), "PLAYER"))
                 .containsExactlyInAnyOrder(a.characterId.toString(), b.characterId.toString());
 
         JsonNode spawn = a.client.next("ENTITY_SPAWN").get("entity");
@@ -172,7 +175,53 @@ class InstanceIntegrationTest {
 
         JsonNode enter = again.next("INSTANCE_ENTER");
         assertThat(enter.get("instanceId").asString()).isEqualTo(instanceId);
-        assertThat(entityIds(enter.get("entities"))).contains(a.characterId.toString());
+        assertThat(entityIds(enter.get("entities"), "PLAYER")).contains(a.characterId.toString());
+    }
+
+    @Test
+    void snapshotContainsGoblinsWithHp() throws Exception {
+        Player a = newPlayer("Alpha");
+        a.client.send("JOIN_INSTANCE", JOIN_GOBLIN_CAVE);
+
+        JsonNode enter = a.client.next("INSTANCE_ENTER");
+        List<String> defIds = new ArrayList<>();
+        for (JsonNode e : enter.get("entities")) {
+            if ("MOB".equals(e.get("entityType").asString())) {
+                defIds.add(e.get("defId").asString());
+                assertThat(e.get("hp").asInt()).isEqualTo(e.get("maxHp").asInt()).isPositive();
+            } else {
+                assertThat(e.get("mp").asInt()).isEqualTo(100);
+            }
+        }
+        assertThat(defIds).containsExactlyInAnyOrder("mob_goblin_grunt", "mob_goblin_grunt", "mob_goblin_archer");
+    }
+
+    @Test
+    void skillCastOutOfRangeReturnsFailedSkillResult() throws Exception {
+        Player a = newPlayer("Alpha");
+        a.client.send("JOIN_INSTANCE", JOIN_GOBLIN_CAVE);
+        String mobId = firstMobId(a.client.next("INSTANCE_ENTER").get("entities"));
+
+        a.client.send("SKILL_CAST", "{\"skillId\":\"warrior_charge\",\"targetEntityId\":\"" + mobId + "\"}");
+
+        JsonNode result = a.client.next("SKILL_RESULT");
+        assertThat(result.get("success").asBoolean()).isFalse();
+        assertThat(result.get("reason").asString()).isEqualTo("TARGET_INVALID");
+        assertThat(result.get("mpRemaining").asInt()).isEqualTo(100);
+    }
+
+    @Test
+    void autoAttackTargetMustBeAliveMob() throws Exception {
+        Player a = newPlayer("Alpha");
+        a.client.send("JOIN_INSTANCE", JOIN_GOBLIN_CAVE);
+        String mobId = firstMobId(a.client.next("INSTANCE_ENTER").get("entities"));
+
+        a.client.send("AUTO_ATTACK_TARGET", "{\"targetEntityId\":\"" + UUID.randomUUID() + "\"}");
+        assertThat(a.client.next("ERROR").get("code").asString()).isEqualTo("TARGET_INVALID");
+
+        a.client.send("AUTO_ATTACK_TARGET", "{\"targetEntityId\":\"" + mobId + "\"}");
+        a.client.send("AUTO_ATTACK_TARGET", "{\"targetEntityId\":null}");
+        assertThat(a.client.receives("ERROR", 300)).isFalse();
     }
 
     // --- helpers ---
@@ -209,10 +258,23 @@ class InstanceIntegrationTest {
                 .formatted(x, z, inputSeq);
     }
 
-    private static List<String> entityIds(JsonNode entities) {
+    private static List<String> entityIds(JsonNode entities, String entityType) {
         List<String> ids = new ArrayList<>();
-        entities.forEach(e -> ids.add(e.get("entityId").asString()));
+        entities.forEach(e -> {
+            if (entityType.equals(e.get("entityType").asString())) {
+                ids.add(e.get("entityId").asString());
+            }
+        });
         return ids;
+    }
+
+    private static String firstMobId(JsonNode entities) {
+        for (JsonNode e : entities) {
+            if ("MOB".equals(e.get("entityType").asString())) {
+                return e.get("entityId").asString();
+            }
+        }
+        throw new AssertionError("no mob in " + entities);
     }
 
     private static JsonNode findEntity(JsonNode entities, UUID entityId) {

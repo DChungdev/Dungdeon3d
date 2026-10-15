@@ -8,10 +8,10 @@
 ## Definition of Done (Phase 0)
 
 - [ ] 2 Android client cùng instance, thấy nhau di chuyển
-- [ ] Damage server-authoritative — client hack HP không có hiệu lực
-- [ ] Kill mob → loot vào inventory → logout/login loot còn
+- [x] Damage server-authoritative — client hack HP không có hiệu lực
+- [x] Kill mob → loot vào inventory → logout/login loot còn
 - [ ] Disconnect 30s → reconnect không mất state
-- [ ] Server 10 concurrent WS không crash
+- [x] Server 10 concurrent WS không crash *(load test 10 và 40 bot, 0 lỗi)*
 - [ ] Demo video 3–5 phút recorded
 
 ---
@@ -69,10 +69,10 @@
 
 ### Client (Unity) — skeleton
 
-- [ ] Unity 2022.3 URP project `client/`
-- [ ] Boot scene + HTTP login flow
-- [ ] WS connect sau login
-- [ ] Log messages to console
+- [x] Unity 2022.3 URP project `client/`
+- [x] Boot scene + HTTP login flow
+- [x] WS connect sau login
+- [x] Log messages to console
 
 **Deliverable tuần 2:** Client login REST + WS connect + heartbeat.
 
@@ -89,17 +89,17 @@
 
 ### Movement Sync
 
-- [ ] Client gửi `MOVE_INTENT` 20Hz *(server đã nhận + rate limit 20/s; còn phía client)*
+- [ ] Client gửi `MOVE_INTENT` 20Hz *(chờ test 2 client)*
 - [x] Server validate speed cap
 - [x] Server broadcast `ENTITY_UPDATE` 10Hz
-- [ ] Client prediction + reconciliation (basic) *(server đã trả `lastInputSeq` trong `ENTITY_UPDATE`; còn phía client)*
+- [ ] Client prediction + reconciliation (basic) *(chờ test 2 client)*
 
 ### Unity
 
-- [ ] Greybox scene 1 room
-- [ ] Virtual joystick
-- [ ] Remote player spawn/despawn
-- [ ] Nameplate
+- [x] Greybox scene 1 room
+- [x] Virtual joystick
+- [ ] Remote player spawn/despawn *(chờ test 2 client)*
+- [x] Nameplate
 
 **Deliverable tuần 3:** 2 client thấy nhau di chuyển trong 1 room.
 
@@ -109,26 +109,26 @@
 
 ### Combat Server
 
-- [ ] `CombatEntity` model (HP, ATK, DEF)
-- [ ] Combat tick loop 10Hz per instance
-- [ ] Auto-attack target lock
-- [ ] Damage formula (TDD §8.2)
-- [ ] `SKILL_CAST` — 1 skill Warrior (Charge)
-- [ ] `DAMAGE_EVENT`, `ENTITY_DEATH` broadcast
-- [ ] `SKILL_RESULT` success/fail
+- [x] `CombatEntity` model (HP, ATK, DEF)
+- [x] Combat tick loop 10Hz per instance
+- [x] Auto-attack target lock
+- [x] Damage formula (TDD §8.2)
+- [x] `SKILL_CAST` — 1 skill Warrior (Charge) *(damage; dash/knockback hoãn)*
+- [x] `DAMAGE_EVENT`, `ENTITY_DEATH` broadcast
+- [x] `SKILL_RESULT` success/fail
 
 ### Mob
 
-- [ ] 3 mob spawn cố định
-- [ ] FSM: IDLE → CHASE → ATTACK → RETURN
-- [ ] Mob death despawn
+- [x] 3 mob spawn cố định
+- [x] FSM: IDLE → CHASE → ATTACK → RETURN
+- [x] Mob death despawn
 
 ### Unity
 
-- [ ] Attack button + 1 skill button
-- [ ] Target lock nearest
-- [ ] HP bar mob + player
-- [ ] Damage number popup (cosmetic)
+- [ ] Attack button + 1 skill button *(đã viết script, chờ test trong Unity)*
+- [ ] Target lock nearest *(đã viết script, chờ test trong Unity)*
+- [ ] HP bar mob + player *(đã viết script, chờ test trong Unity)*
+- [ ] Damage number popup (cosmetic) *(đã viết script, chờ test trong Unity)*
 
 **Deliverable tuần 4:** Kill 3 mob bằng auto-attack + 1 skill.
 
@@ -138,22 +138,22 @@
 
 ### Inventory
 
-- [ ] `inventory_items` CRUD server-side
-- [ ] Loot roll on mob death (1 item Common)
-- [ ] `GET /api/v1/characters/{id}/inventory`
-- [ ] Inventory full → reject với error
+- [x] `inventory_items` CRUD server-side *(tạo, gộp chồng, đọc; xóa/bán chưa có — chưa cần ở P0)*
+- [x] Loot roll on mob death (1 item Common) *(1 lần roll theo `loot_table_entries`, có thể ra RARE)*
+- [x] `GET /api/v1/characters/{id}/inventory`
+- [x] Inventory full → reject với error
 
 ### Persistence
 
-- [ ] Save character HP/MP on instance exit
-- [ ] Currency audit log (gold +10 per mob MVP)
-- [ ] Idempotent loot (mob kill once)
+- [x] Save character HP/MP on instance exit
+- [x] Currency audit log (gold +10 per mob MVP)
+- [x] Idempotent loot (mob kill once)
 
 ### Unity
 
-- [ ] Loot notification UI
-- [ ] Simple inventory list UI (debug)
-- [ ] Instance exit → reload inventory REST
+- [ ] Loot notification UI *(đã viết script, chờ test trong Unity)*
+- [ ] Simple inventory list UI (debug) *(đã viết script, chờ test trong Unity)*
+- [ ] Instance exit → reload inventory REST *(đã viết script, chờ test trong Unity)*
 
 **Deliverable tuần 5:** Loot persist qua logout/login.
 
@@ -163,22 +163,22 @@
 
 ### Hardening
 
-- [ ] Reconnect flow (disconnect 10s → reconnect)
-- [ ] Rate limit login 5/min
-- [ ] Input validation all WS messages
-- [ ] Error handling client (toast)
-- [ ] 2-device test checklist 20 cases
+- [ ] Reconnect flow (disconnect 10s → reconnect) *(server + client đã làm; chờ test case #19)*
+- [x] Rate limit login 5/min
+- [x] Input validation all WS messages *(+ giới hạn 50 msg/s/kết nối, flood → đóng)*
+- [ ] Error handling client (toast) *(đã viết script, chờ test trong Unity)*
+- [x] 2-device test checklist 20 cases *(viết xong: [phase-0-test-report.md](phase-0-test-report.md); chờ chạy tay)*
 
 ### Build
 
 - [ ] Android debug APK
-- [ ] Server deploy cloud dev (1 instance)
-- [ ] Client point to dev server config
+- [ ] Server deploy cloud dev (1 instance) *(Dockerfile + profile `dev` sẵn sàng; chưa chọn nền tảng)*
+- [x] Client point to dev server config *(ô Server trên màn đăng nhập, nhớ trong PlayerPrefs)*
 
 ### Documentation
 
-- [ ] Ghi latency đo được (hub N/A, instance)
-- [ ] Bug list P0/P1
+- [ ] Ghi latency đo được (hub N/A, instance) *(localhost đã đo; còn Wi-Fi / cloud)*
+- [x] Bug list P0/P1
 - [ ] Phase 0 retrospective doc
 - [ ] Demo video 3–5 phút
 

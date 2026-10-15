@@ -46,6 +46,14 @@ public class CharacterEntity {
     @Column(name = "hub_shard_id", length = 50)
     private String hubShardId;
 
+    /** HP saved on instance exit; null = full. */
+    @Column(name = "current_hp")
+    private Integer currentHp;
+
+    /** MP saved on instance exit; null = full. */
+    @Column(name = "current_mp")
+    private Integer currentMp;
+
     @Column(name = "last_login_at")
     private Instant lastLoginAt;
 
@@ -150,6 +158,22 @@ public class CharacterEntity {
 
     public void setHubShardId(String hubShardId) {
         this.hubShardId = hubShardId;
+    }
+
+    public Integer getCurrentHp() {
+        return currentHp;
+    }
+
+    public void setCurrentHp(Integer currentHp) {
+        this.currentHp = currentHp;
+    }
+
+    public Integer getCurrentMp() {
+        return currentMp;
+    }
+
+    public void setCurrentMp(Integer currentMp) {
+        this.currentMp = currentMp;
     }
 
     public Instant getLastLoginAt() {

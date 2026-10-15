@@ -1,0 +1,4 @@
+target/
+*.log
+src/main/resources/application-local*.yml
+!src/main/resources/application-local*.yml.example

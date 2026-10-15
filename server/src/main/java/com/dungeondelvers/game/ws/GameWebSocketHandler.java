@@ -7,6 +7,7 @@ import com.dungeondelvers.game.ws.protocol.ClientMessage;
 import com.dungeondelvers.game.ws.protocol.MessageType;
 import com.dungeondelvers.game.ws.protocol.Payloads;
 import com.dungeondelvers.game.ws.protocol.WsErrorCode;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -81,6 +82,22 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
             return;
         }
 
+        switch (session.admitMessage(System.currentTimeMillis())) {
+            case OK -> { }
+            case DROP_AND_WARN -> {
+                messageSender.sendError(session, WsErrorCode.RATE_LIMITED, "Too many messages", null);
+                return;
+            }
+            case DROP -> {
+                return;
+            }
+            case FLOOD -> {
+                log.warn("Closing flooding connection for session {}", session.getSessionId());
+                closeQuietly(connection, CloseStatus.POLICY_VIOLATION);
+                return;
+            }
+        }
+
         ClientMessage message;
         try {
             message = objectMapper.readValue(textMessage.getPayload(), ClientMessage.class);
@@ -109,6 +126,14 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
         } catch (RuntimeException ex) {
             log.error("Handler {} failed for session {}", message.type(), session.getSessionId(), ex);
             messageSender.sendError(session, WsErrorCode.INTERNAL_ERROR, "Internal server error", message.seq());
+        }
+    }
+
+    private static void closeQuietly(WebSocketSession connection, CloseStatus status) {
+        try {
+            connection.close(status);
+        } catch (IOException ignored) {
+            // already broken
         }
     }
 

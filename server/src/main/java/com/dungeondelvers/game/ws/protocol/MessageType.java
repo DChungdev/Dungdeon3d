@@ -25,4 +25,14 @@ public final class MessageType {
     public static final String ENTITY_UPDATE = "ENTITY_UPDATE";
     public static final String ENTITY_SPAWN = "ENTITY_SPAWN";
     public static final String ENTITY_DESPAWN = "ENTITY_DESPAWN";
+
+    // Combat
+    public static final String AUTO_ATTACK_TARGET = "AUTO_ATTACK_TARGET";
+    public static final String SKILL_CAST = "SKILL_CAST";
+    public static final String SKILL_RESULT = "SKILL_RESULT";
+    public static final String DAMAGE_EVENT = "DAMAGE_EVENT";
+    public static final String ENTITY_DEATH = "ENTITY_DEATH";
+
+    // Loot
+    public static final String LOOT_DROP = "LOOT_DROP";
 }

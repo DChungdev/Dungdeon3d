@@ -1009,6 +1009,11 @@ components:
           type: boolean
         slotIndex:
           type: integer
+        name:
+          type: string
+          description: Display name from item_definitions (P0 convenience)
+        itemType:
+          type: string
 
     ApiResponseInventory:
       allOf:
@@ -1024,6 +1029,9 @@ components:
                     $ref: '#/components/schemas/InventoryItem'
                 capacity:
                   type: integer
+                gold:
+                  type: integer
+                  description: Current gold of the character (P0 convenience)
 
     QuestProgress:
       type: object

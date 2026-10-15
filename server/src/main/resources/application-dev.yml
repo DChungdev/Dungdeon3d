@@ -1,21 +1,21 @@
-# Profile: local-native
-# Dùng khi KHÔNG có Docker và KHÔNG có Redis.
-# PostgreSQL: cài native Windows hoặc Neon cloud.
-# Session/cache: in-memory (đủ Phase 0 prototype).
+# Profile: dev — cloud dev server (Phase 0 week 6). Everything secret comes from env vars;
+# startup fails if one is missing, rather than silently using a dev default.
+#
+#   DB_URL       jdbc:postgresql://<host>:5432/dungeon_delvers
+#   DB_USER / DB_PASSWORD
+#   JWT_SECRET   ≥ 32 random characters
+#   CORS_ORIGINS optional, default "*"
 
 spring:
-  application:
-    name: dungeon-delvers-server
-
   autoconfigure:
     exclude:
       - org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration
       - org.springframework.boot.data.redis.autoconfigure.DataRedisRepositoriesAutoConfiguration
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/dungeon_delvers
-    username: postgres
-    password: 123456
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
     hikari:
       maximum-pool-size: 10
       minimum-idle: 2
@@ -34,19 +34,17 @@ spring:
     locations: classpath:db/migration
 
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 ddo:
   jwt:
-    secret: dev-secret-change-in-production-min-32-chars!!
+    secret: ${JWT_SECRET}
     access-token-ttl-sec: 900
     refresh-token-ttl-sec: 604800
   cache:
-  # memory = in-process ConcurrentHashMap (Phase 0)
-  # redis  = cần profile "local" + Redis/Memurai/Upstash
     type: memory
   cors:
-    allowed-origins: "*"
+    allowed-origins: ${CORS_ORIGINS:*}
   game:
     hub-max-players-per-shard: 30
     instance-max-players: 4
@@ -57,7 +55,7 @@ ddo:
 logging:
   level:
     root: INFO
-    com.dungeondelvers: DEBUG
+    com.dungeondelvers: INFO
 
 management:
   endpoints:

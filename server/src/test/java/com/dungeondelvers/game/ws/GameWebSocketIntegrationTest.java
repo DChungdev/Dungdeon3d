@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import com.dungeondelvers.MockPersistence;
 import com.dungeondelvers.auth.jwt.JwtService;
 import com.dungeondelvers.persistence.entity.CharacterEntity;
 import com.dungeondelvers.persistence.repository.AccountRepository;
@@ -36,6 +37,7 @@ import tools.jackson.databind.ObjectMapper;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
+@MockPersistence
 class GameWebSocketIntegrationTest {
 
     @LocalServerPort
@@ -149,6 +151,47 @@ class GameWebSocketIntegrationTest {
     }
 
     @Test
+    void warnsOnceWhenOverMessageRateLimit() throws Exception {
+        TestClient c = connect(jwtService.createAccessToken(accountId));
+        c.next(); // CONNECTED
+
+        for (int i = 1; i <= 70; i++) {
+            c.send("{\"type\":\"PING\",\"seq\":" + i + ",\"payload\":{}}");
+        }
+
+        int pongs = 0;
+        int rateLimitErrors = 0;
+        JsonNode message;
+        while ((message = c.poll(500)) != null) {
+            String type = message.get("type").asString();
+            if (type.equals("PONG")) {
+                pongs++;
+            } else if (type.equals("ERROR")) {
+                assertThat(message.get("payload").get("code").asString()).isEqualTo("RATE_LIMITED");
+                rateLimitErrors++;
+            }
+        }
+        assertThat(pongs).isEqualTo(50);
+        assertThat(rateLimitErrors).isEqualTo(1);
+    }
+
+    @Test
+    void closesFloodingConnection() throws Exception {
+        TestClient c = connect(jwtService.createAccessToken(accountId));
+        c.next(); // CONNECTED
+
+        try {
+            for (int i = 1; i <= 200 && !c.isClosed(); i++) {
+                c.send("{\"type\":\"PING\",\"seq\":" + i + ",\"payload\":{}}");
+            }
+        } catch (IllegalStateException closedWhileSending) {
+            // expected: the server closed the connection mid-flood
+        }
+
+        assertThat(c.awaitClose(2000)).isTrue();
+    }
+
+    @Test
     void returnsErrorForUnknownType() throws Exception {
         TestClient c = connect(jwtService.createAccessToken(accountId));
         c.next(); // CONNECTED
@@ -217,6 +260,10 @@ class GameWebSocketIntegrationTest {
         JsonNode poll(long timeoutMs) throws Exception {
             String raw = inbox.poll(timeoutMs, TimeUnit.MILLISECONDS);
             return raw == null ? null : objectMapper.readTree(raw);
+        }
+
+        boolean isClosed() {
+            return closed.getCount() == 0 || !connection.isOpen();
         }
 
         boolean awaitClose(long timeoutMs) throws InterruptedException {

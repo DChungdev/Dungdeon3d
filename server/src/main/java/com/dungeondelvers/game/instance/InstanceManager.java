@@ -7,6 +7,7 @@ import com.dungeondelvers.game.ws.MessageSender;
 import jakarta.annotation.PreDestroy;
 import java.util.Map;
 import java.util.Optional;
+import java.util.SplittableRandom;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -33,8 +34,9 @@ public class InstanceManager {
 
     private static final Logger log = LoggerFactory.getLogger(InstanceManager.class);
 
-    /** Character data needed to spawn a player entity. */
-    public record PlayerProfile(String name, int level, String classType, int maxHp, double moveSpeed) {}
+    /** Character data needed to spawn a player entity. {@code savedHp/savedMp}: null = full. */
+    public record PlayerProfile(String name, int level, String classType, CombatStats stats,
+                                Integer savedHp, Integer savedMp) {}
 
     public enum JoinStatus { JOINED, ALREADY_IN_ROOM, ROOM_FULL }
 
@@ -43,14 +45,19 @@ public class InstanceManager {
     private final Map<UUID, InstanceRoom> rooms = new ConcurrentHashMap<>();
     private final Map<UUID, ScheduledFuture<?>> tickTasks = new ConcurrentHashMap<>();
     private final MessageSender messageSender;
+    private final MobKillListener mobKillListener;
+    private final PlayerVitalsSink vitalsSink;
     private final int maxPlayers;
     private final long tickIntervalMs;
     private final long idleTimeoutMs;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2,
             Thread.ofPlatform().name("instance-tick-", 0).daemon().factory());
 
-    public InstanceManager(MessageSender messageSender, DdoProperties properties) {
+    public InstanceManager(MessageSender messageSender, DdoProperties properties,
+                           MobKillListener mobKillListener, PlayerVitalsSink vitalsSink) {
         this.messageSender = messageSender;
+        this.mobKillListener = mobKillListener;
+        this.vitalsSink = vitalsSink;
         this.maxPlayers = properties.game().instanceMaxPlayers();
         this.tickIntervalMs = 1000L / properties.game().combatTickHz();
         this.idleTimeoutMs = properties.game().instanceIdleTimeoutSec() * 1000L;
@@ -77,7 +84,7 @@ public class InstanceManager {
 
         long now = System.currentTimeMillis();
         PlayerEntity player = new PlayerEntity(session, profile.name(), profile.level(), profile.classType(),
-                profile.maxHp(), profile.moveSpeed(), room.nextSpawnPoint(), now);
+                profile.stats(), profile.savedHp(), profile.savedMp(), room.nextSpawnPoint(), now);
         if (!room.addPlayer(player)) {
             return new JoinResult(JoinStatus.ROOM_FULL, room);
         }
@@ -88,10 +95,10 @@ public class InstanceManager {
 
     /** Removes the session's character from its room, if any. */
     public synchronized void leave(GameSession session) {
-        currentRoom(session).ifPresent(room -> {
-            room.removePlayer(session.getCharacterId());
+        currentRoom(session).ifPresent(room -> room.removePlayer(session.getCharacterId()).ifPresent(player -> {
+            saveVitals(player);
             log.info("{} left instance {}", session.getCharacterName(), room.getInstanceId());
-        });
+        }));
         if (ZONE_INSTANCE.equals(session.getZoneType())) {
             session.setZone(null, null);
         }
@@ -138,8 +145,9 @@ public class InstanceManager {
 
     private InstanceRoom createRoom(DungeonCatalog.DungeonDef dungeon, String difficulty) {
         int capacity = Math.min(maxPlayers, dungeon.maxPartySize());
-        InstanceRoom room = new InstanceRoom(dungeon, difficulty, ThreadLocalRandom.current().nextLong(),
-                capacity, messageSender, System.currentTimeMillis());
+        long seed = ThreadLocalRandom.current().nextLong();
+        InstanceRoom room = new InstanceRoom(dungeon, difficulty, seed, capacity, tickIntervalMs, messageSender,
+                new SplittableRandom(seed), mobKillListener, System.currentTimeMillis());
         rooms.put(room.getInstanceId(), room);
         tickTasks.put(room.getInstanceId(), scheduler.scheduleAtFixedRate(
                 () -> safeTick(room), tickIntervalMs, tickIntervalMs, TimeUnit.MILLISECONDS));
@@ -154,12 +162,17 @@ public class InstanceManager {
         }
         rooms.remove(room.getInstanceId());
         for (PlayerEntity player : room.destroy()) {
+            saveVitals(player);
             GameSession session = player.getSession();
             if (room.getInstanceId().toString().equals(session.getZoneId())) {
                 session.setZone(null, null);
             }
         }
         log.info("Destroyed idle instance {}", room.getInstanceId());
+    }
+
+    private void saveVitals(PlayerEntity player) {
+        vitalsSink.save(player.getEntityId(), player.getHp(), player.getMp());
     }
 
     private static void safeTick(InstanceRoom room) {

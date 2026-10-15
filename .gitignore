@@ -22,8 +22,9 @@ hs_err_pid*
 
 # Spring Boot
 server/.env
-server/application-local.yml
-server/application-local-native.yml
+# Local configs hold real DB passwords; only the .example files are committed.
+server/src/main/resources/application-local.yml
+server/src/main/resources/application-local-native.yml
 !server/src/main/resources/application-local.yml.example
 !server/src/main/resources/application-local-native.yml.example
 

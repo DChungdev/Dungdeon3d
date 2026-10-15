@@ -129,6 +129,7 @@ Used for: `INSTANCE_COMPLETE`, rare loot drop, purchase confirm.
 | `RATE_LIMITED` | Too many messages |
 | `PARTY_NOT_LEADER` | Only leader can queue |
 | `INSTANCE_NOT_FOUND` | Room destroyed |
+| `INVENTORY_FULL` | Loot could not be placed (bag has 40 slots) |
 | `MAINTENANCE` | Server maintenance |
 
 ---
@@ -159,6 +160,9 @@ Used for: `INSTANCE_COMPLETE`, rare loot drop, purchase confirm.
   "state": "IDLE"
 }
 ```
+
+Players also carry `mp` / `maxMp`; mobs carry `defId` (e.g. `mob_goblin_grunt`) instead of
+`classType`. Absent fields are omitted.
 
 `entityType`: `PLAYER` | `MOB` | `BOSS` | `PROJECTILE` | `INTERACTABLE`
 
@@ -282,13 +286,16 @@ Rate: **20 Hz** max. Server drops excess.
 
 Rate: **10 Hz**. Only entities that changed since the last tick are included.
 
+Every entity in the batch carries `hp`; players also `mp`.
+
 Player entities also carry `lastInputSeq`: the last `MOVE_INTENT.inputSeq` the server
 applied. The owning client drops inputs ≤ `lastInputSeq` from its prediction buffer and
 replays the rest on top of the server position (reconciliation).
 
-Server movement validation (Phase 0): a move is accepted if reachable at
-`moveSpeed × 1.1` since the previous accepted move (time credit capped at 0.5 s,
-+0.1 m tolerance); otherwise the player is moved as far as allowed towards the target.
+Server movement validation (Phase 0): elapsed time earns a distance budget at
+`moveSpeed × 1.1` (capped at 0.5 s worth), each move spends it, with a one-off 0.1 m
+tolerance. A move beyond the budget is cut short: the player is moved as far as allowed
+towards the target. Packets bunched by network jitter are therefore not corrected.
 Positions are clamped to the room bounds (Phase 0 greybox: x, z ∈ [-20, 20]).
 
 ### ENTITY_SPAWN / ENTITY_DESPAWN (S→C)
@@ -532,14 +539,23 @@ Send `null` target to clear.
   "type": "SKILL_RESULT",
   "payload": {
     "skillId": "warrior_charge",
-    "success": true,
+    "success": false,
+    "reason": "SKILL_ON_COOLDOWN",
     "cooldownEndTick": 12500,
+    "cooldownRemainingMs": 6200,
     "mpRemaining": 150
   }
 }
 ```
 
+Sent to the caster only. `reason` (failures only): `SKILL_ON_COOLDOWN` | `INSUFFICIENT_MP` |
+`TARGET_INVALID` | `UNKNOWN_SKILL`. `cooldownRemainingMs` lets the client show the cooldown
+without knowing the tick rate. Phase 0: `warrior_charge` deals damage only; the dash /
+knockback is deferred.
+
 ### DAMAGE_EVENT (S→C)
+
+Broadcast to the room. `skillId` is `null` for auto-attacks.
 
 ```json
 {
@@ -651,14 +667,27 @@ Send `null` target to clear.
     "items": [
       {
         "inventoryItemId": "uuid",
-        "itemDefId": "sword_iron",
+        "itemDefId": "mat_goblin_ear",
+        "name": "Goblin Ear",
         "rarity": "COMMON",
-        "quantity": 1
+        "quantity": 2
       }
-    ]
+    ],
+    "gold": 10,
+    "goldTotal": 120
   }
 }
 ```
+
+Sent only to players who damaged the mob (personal loot, ADR-003); each rolls separately.
+The reward is already persisted when this is sent. `quantity` is the amount added by this
+drop (it may have been stacked onto an existing item, so `inventoryItemId` can repeat).
+A kill pays out at most once per character (`mob_kill_rewards` primary key).
+If the bag is full the item is dropped (gold is still granted), `items` is empty and an
+`ERROR` with code `INVENTORY_FULL` follows.
+
+Phase 0: the server accepts `ACK` but does not resend unacknowledged events yet; the client
+reloads the inventory over REST after leaving the instance.
 
 ### INSTANCE_COMPLETE (S→C)
 

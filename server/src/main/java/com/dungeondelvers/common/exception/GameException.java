@@ -35,6 +35,10 @@ public class GameException extends RuntimeException {
         return new GameException(ErrorCode.NOT_FOUND, message, 404);
     }
 
+    public static GameException tooManyRequests(String message) {
+        return new GameException(ErrorCode.RATE_LIMITED, message, 429);
+    }
+
     public static GameException conflict(ErrorCode code, String message) {
         return new GameException(code, message, 409);
     }

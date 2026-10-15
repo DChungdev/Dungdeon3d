@@ -1,5 +1,6 @@
 package com.dungeondelvers.game.ws.handler;
 
+import com.dungeondelvers.game.instance.CombatStats;
 import com.dungeondelvers.game.instance.DungeonCatalog;
 import com.dungeondelvers.game.instance.InstanceManager;
 import com.dungeondelvers.game.session.GameSession;
@@ -80,17 +81,24 @@ public class JoinInstanceHandler implements WsMessageHandler {
     }
 
     private InstanceManager.PlayerProfile toProfile(CharacterEntity character) {
-        int maxHp = 1000;
-        double moveSpeed = 5.0;
+        JsonNode stats;
         try {
-            JsonNode stats = objectMapper.readTree(character.getStatsJson());
-            maxHp = stats.path("maxHp").asInt(maxHp);
-            moveSpeed = stats.path("moveSpeed").asDouble(moveSpeed);
-        } catch (JacksonException ignored) {
-            // fall back to defaults
+            stats = objectMapper.readTree(character.getStatsJson());
+        } catch (JacksonException ex) {
+            stats = objectMapper.createObjectNode();
         }
-        return new InstanceManager.PlayerProfile(
-                character.getName(), character.getLevel(), character.getClassType(), maxHp, moveSpeed);
+        // Defaults are the Warrior base stats (CharacterBaseStats) in case the JSON is incomplete.
+        CombatStats combatStats = new CombatStats(
+                stats.path("maxHp").asInt(1000),
+                stats.path("maxMp").asInt(100),
+                stats.path("atk").asInt(50),
+                stats.path("def").asInt(30),
+                stats.path("critRate").asDouble(0.05),
+                stats.path("critDamage").asDouble(1.5),
+                stats.path("moveSpeed").asDouble(5.0),
+                stats.path("attackSpeed").asDouble(1.0));
+        return new InstanceManager.PlayerProfile(character.getName(), character.getLevel(),
+                character.getClassType(), combatStats, character.getCurrentHp(), character.getCurrentMp());
     }
 
     private static String textOrNull(JsonNode node) {

@@ -1,5 +1,6 @@
 package com.dungeondelvers.game.session;
 
+import com.dungeondelvers.common.ratelimit.RateLimiter;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
@@ -14,11 +15,18 @@ public class GameSession {
 
     public enum ConnectionState { CONNECTED, DISCONNECTED }
 
+    /** All message types combined (20 MOVE_INTENT + 5 SKILL_CAST + PING/ACK/… fit easily). */
+    public static final int MAX_MESSAGES_PER_SEC = 50;
+
+    /** Outcome of {@link #admitMessage}. */
+    public enum Admission { OK, DROP_AND_WARN, DROP, FLOOD }
+
     private final UUID sessionId = UUID.randomUUID();
     private final UUID accountId;
     private final UUID characterId;
     private final String characterName;
     private final AtomicLong serverSeq = new AtomicLong();
+    private final RateLimiter messageLimiter = new RateLimiter(MAX_MESSAGES_PER_SEC);
 
     private volatile WebSocketSession connection;
     private volatile ConnectionState state = ConnectionState.CONNECTED;
@@ -60,6 +68,21 @@ public class GameSession {
         }
         lastClientSeq = seq;
         return true;
+    }
+
+    /**
+     * Global per-connection rate limit (network-protocol §9). Over the limit, messages are dropped;
+     * the first drop in a window gets a warning; 3× the limit in one window is treated as a flood.
+     */
+    public synchronized Admission admitMessage(long nowMs) {
+        if (messageLimiter.tryAcquire(nowMs)) {
+            return Admission.OK;
+        }
+        int count = messageLimiter.countInWindow();
+        if (count > MAX_MESSAGES_PER_SEC * 3) {
+            return Admission.FLOOD;
+        }
+        return count == MAX_MESSAGES_PER_SEC + 1 ? Admission.DROP_AND_WARN : Admission.DROP;
     }
 
     public long nextServerSeq() {

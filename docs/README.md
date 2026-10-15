@@ -16,6 +16,8 @@ Tài liệu được sắp xếp theo thứ tự đọc khuyến nghị khi bắ
 | # | Tài liệu | Ai cần đọc | Mục đích |
 |---|----------|------------|----------|
 | 5 | [phase-0-checklist.md](phase-0-checklist.md) | Dev | Task cụ thể tuần 1–6 |
+| 5b | [phase-0-test-report.md](phase-0-test-report.md) | Dev / QA | 20 case test 2 thiết bị, load test, latency, bug list |
+| 5c | [phase-1-checklist.md](phase-1-checklist.md) | Dev | Task cụ thể tuần 7–16 (Vertical Slice) |
 | 6 | [project-structure.md](project-structure.md) | Dev | Folder layout client + server |
 | 7 | [setup-guide.md](setup-guide.md) | Dev | IDE, env vars |
 | 7b | [setup-guide-windows-native.md](setup-guide-windows-native.md) | Dev | **Không Docker** — PostgreSQL native |

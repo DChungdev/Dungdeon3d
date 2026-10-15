@@ -45,6 +45,8 @@ Xem backlog đầy đủ trong conversation / issue tracker. Tài liệu này t�
 
 **Done khi:** 2p clear 10–15 phút, FPS ≥30, playtest ≥3.5/5 fun.
 
+→ Chi tiết: [phase-1-checklist.md](phase-1-checklist.md)
+
 ---
 
 ## Phase 2 — Alpha (20 tuần)

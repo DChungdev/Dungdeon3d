@@ -14,5 +14,6 @@ public enum WsErrorCode {
     PARTY_NOT_LEADER,
     INSTANCE_NOT_FOUND,
     MAINTENANCE,
+    INVENTORY_FULL,
     INTERNAL_ERROR
 }
